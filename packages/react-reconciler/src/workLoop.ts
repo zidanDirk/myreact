@@ -1,21 +1,44 @@
 import { beginWork } from './beginWork';
 import { completeWork } from './completeWork';
-import { FiberNode } from './fiber';
+import { FiberNode, FiberRootNode, createWorkInProgress } from './fiber';
+import { HostRoot } from './workTags';
 
 let workInProgress: FiberNode | null = null;
 
-function prepareFreshStack(fiber: FiberNode) {
-	workInProgress = fiber;
+function prepareFreshStack(root: FiberRootNode) {
+	workInProgress = createWorkInProgress(root.current, {});
 }
 
-function renderRoot(root: FiberNode) {
+export function scheduleUpdateOnFiber(fiber: FiberNode) {
+	// TODO 调度功能
+	// fiberRootNode
+	const root = markUpdateFromFiberToRoot(fiber)
+	renderRoot(root)
+}
+
+function markUpdateFromFiberToRoot(fiber: FiberNode) {
+	 let node = fiber
+	 let parent = node.return
+	 while (parent !== null) {
+		node = parent 
+		parent = node.return
+	 }
+	 if(node.type === HostRoot) {
+		return node.stateNode
+	 }
+	 return null
+}
+
+function renderRoot(root: FiberRootNode) {
 	prepareFreshStack(root);
 	do {
 		try {
 			workLoop();
 			break;
 		} catch (e) {
-			console.warn('workloop 发生错误', e);
+			if(__DEV__) {
+				console.warn('workloop 发生错误', e);
+			}
 			workInProgress = null;
 		}
 	} while (true);
